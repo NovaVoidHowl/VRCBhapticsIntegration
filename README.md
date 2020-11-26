@@ -6,6 +6,8 @@ Special Thanks to bHaptics for making the bHaptics Gear and supporting me and th
 - Includes a Unity Package for you to use in the Unity Editor to create your own custom bHaptics Compatible Avatars.
 - Currently Supports Tactot (Haptic Vest for Torso), Tactosy (Haptic Sleeve for Arms) and Tactal (Haptic Face Cushion for HMD).
 
+- bHaptics Avatar World: https://vrchat.com/home/world/wrld_84e1a940-c139-44dc-8ddf-e2a3c5b2a4d9
+
 - INSTALLATION GUIDE: (COMING SOON)
 
 - AVATAR GUIDE: (COMING SOON)
