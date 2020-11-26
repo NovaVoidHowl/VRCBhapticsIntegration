@@ -18,7 +18,7 @@ VRCBhapticsIntegration is licensed under the Apache License, Version 2.0. See [L
 
 Third-party libraries used as source code or bundled in binary form:
 - [bHaptics Haptic Library](https://github.com/bhaptics/haptic-library) is licensed under All rights reserved Copyright (c) 2016-2020 bHaptics Inc.  
-See [LICENSE](https://www.bhaptics.com/legals/terms-and-conditions) for the full License. Express permission from the company.
+See [Terms and Conditions](https://www.bhaptics.com/legals/terms-and-conditions) for the full License. Express permission from the company.
 
 VRCBhapticsIntegration is not sponsored by, affiliated with or endorsed by VRChat, Unity Technologies, or their affiliates.  
 "Unity" is a trademark or a registered trademark of Unity Technologies or its affiliates in the U.S. and elsewhere.
