@@ -1,5 +1,5 @@
 # VRCBhapticsIntegration
-Mod for VRChat using MelonLoader
+Mod for VRChat using MelonLoader  
 Special Thanks to bHaptics for making the bHaptics Gear and supporting me and this mod wherever needed! :D
 
 - Allows you to use your bHaptics Gear to feel touch in VRChat when using bHaptics Compatible Avatars.
