@@ -3,7 +3,7 @@ Mod for VRChat using MelonLoader
 Special Thanks to bHaptics for making the bHaptics Gear and supporting me and this mod wherever needed! :D
 
 - Allows you to use your bHaptics Gear to feel touch in VRChat when using bHaptics Compatible Avatars.
-- Includes a Unity Package in the Releases for you to use in the Unity Editor to create your own custom bHaptics Compatible Avatars.
+- Includes a Unity Package for you to use in the Unity Editor to create your own custom bHaptics Compatible Avatars.
 - Currently Supports Tactot (Haptic Vest for Torso), Tactosy (Haptic Sleeve for Arms) and Tactal (Haptic Face Cushion for HMD).
 
 - INSTALLATION GUIDE: (COMING SOON)
