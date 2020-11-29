@@ -10,7 +10,7 @@ Special Thanks to bHaptics for making the bHaptics Gear and supporting me and th
 
 - INSTALLATION GUIDE: (COMING SOON)
 
-- AVATAR GUIDE: https://www.youtube.com/watch?v=duaOPZsA5A0
+- AVATAR CREATION GUIDE: https://www.youtube.com/watch?v=duaOPZsA5A0
 
 ---
 
