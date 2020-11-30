@@ -8,9 +8,9 @@ Special Thanks to bHaptics for making the bHaptics Gear and supporting me and th
 
 - bHaptics Avatar World: https://vrchat.com/home/world/wrld_84e1a940-c139-44dc-8ddf-e2a3c5b2a4d9
 
-- INSTALLATION GUIDE: (COMING SOON)
+- INSTALLATION GUIDE: https://youtu.be/ps2HCHy-Zf8
 
-- AVATAR CREATION GUIDE: https://www.youtube.com/watch?v=duaOPZsA5A0
+- AVATAR CREATION GUIDE: https://youtu.be/duaOPZsA5A0
 
 ---
 
