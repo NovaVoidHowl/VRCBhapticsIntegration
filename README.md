@@ -4,7 +4,7 @@ Special Thanks to bHaptics for making the bHaptics Gear and supporting me and th
 
 - Allows you to use your bHaptics Gear to feel touch in VRChat when using bHaptics Compatible Avatars.
 - Includes a Unity Package for you to use in the Unity Editor to create your own custom bHaptics Compatible Avatars.
-- Currently Supports Tactot (Haptic Vest for Torso), Tactosy (Haptic Sleeve for Arms) and Tactal (Haptic Face Cushion for HMD).
+- Supports all bHaptics Devices.
 
 - bHaptics Avatar World: https://vrchat.com/home/world/wrld_84e1a940-c139-44dc-8ddf-e2a3c5b2a4d9
 

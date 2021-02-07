@@ -22,19 +22,100 @@ public enum BhapticsDeviceType
     RightFoot
 }
 
-[Serializable]
-public enum BhapticsPrefabMode
-{
-    Visualized, Hidden
-}
-
 [ExecuteInEditMode]
 [RequireComponent(typeof(VRC.SDKBase.VRC_AvatarDescriptor))]
-[AddComponentMenu("BhapticsVRCEditor")]
-public class BhapticsVRCEditor : MonoBehaviour
+[AddComponentMenu("VRCBhapticsIntegrationEditor")]
+public class VRCBhapticsIntegrationEditor : MonoBehaviour
 {
-    public static readonly float[] cameraSizeOffest = new float[] { 0.19f, 0.05f, 0.05f, 0.012f, 0.022f, 0.022f, 0.015f, 0.015f };
-    public static readonly float[] cameraFarOffest = new float[] { 0.14f, 0.175f, 0.175f, 0.225f, 0.15f, 0.15f, 0.175f, 0.175f };
+	//public static readonly Vector3[] objectPositionOffsets = new Vector3[8];
+	public static readonly Vector3[] objectRotationOffsets = new Vector3[8];
+	public static readonly Vector3[] objectScaleOffsets = new Vector3[8];
+	public static readonly float[] cameraSizeOffsets = new float[8];
+	public static readonly float[] cameraNearOffsets = new float[8];
+	public static readonly float[] cameraFarOffsets = new float[8];
+    public static readonly float[] cameraDummySizeOffsets = new float[8];
+	public static readonly float[] cameraDummyNearOffsets = new float[8];
+	public static readonly float[] cameraDummyFarOffsets = new float[8];
+	
+	public static void SetupOffsets()
+	{
+		GetOffsetsFromPrefab("Vest", 0);
+		GetOffsetsFromPrefab("LeftArm", 1);
+		GetOffsetsFromPrefab("RightArm", 2);
+		GetOffsetsFromPrefab("Head", 3);
+		GetOffsetsFromPrefab("LeftHand", 4);
+		GetOffsetsFromPrefab("RightHand", 5);
+		GetOffsetsFromPrefab("LeftFoot", 6);
+		GetOffsetsFromPrefab("RightFoot", 7);
+	}
+	public static void GetOffsetsFromPrefab(string deviceTypeStr, int offset_index)
+	{
+		string prefabName = GetDevicePrefabName(deviceTypeStr);
+        string path = FindAssetPath(prefabName);
+        if (path == null)
+        {
+            Debug.LogErrorFormat("BhapticsVRCEditor / Cannot find asset {0}", deviceTypeStr);
+            return;
+        }
+        GameObject device =  AssetDatabase.LoadAssetAtPath<GameObject>(path);
+		//objectPositionOffsets[offset_index] = device.transform.position;
+		objectRotationOffsets[offset_index] = device.transform.eulerAngles;
+		objectScaleOffsets[offset_index] = device.transform.lossyScale;
+		Camera[] cameras = device.GetComponentsInChildren<Camera>(true);
+        for (int i = 0; i < cameras.Length; ++i)
+		{
+			Camera cam = cameras[i];
+			if (cam.name.StartsWith("Dummy"))
+			{
+				cameraDummySizeOffsets[offset_index] =  cam.orthographicSize;
+				cameraDummyNearOffsets[offset_index] =  cam.nearClipPlane;
+				cameraDummyFarOffsets[offset_index] =  cam.farClipPlane;
+			}
+			else
+			{
+				cameraSizeOffsets[offset_index] =  cam.orthographicSize;
+				cameraNearOffsets[offset_index] =  cam.nearClipPlane;
+				cameraFarOffsets[offset_index] =  cam.farClipPlane;
+			}
+		}
+	}
+	
+	public static void SetObjectScaleFromPrefab(GameObject device, int offset_index) => 
+		device.transform.localScale = objectScaleOffsets[offset_index];
+	
+	public static void SetObjectOffetsFromPrefab(GameObject device, int offset_index)
+	{
+		//device.transform.localPosition = objectPositionOffsets[offset_index];
+		/*
+		Vector3 currentRotation = device.transform.localEulerAngles;
+		Transform currentParent = device.transform.parent;
+		device.transform.SetParent(null, true);
+		device.transform.eulerAngles = objectRotationOffsets[offset_index];
+		device.transform.SetParent(currentParent);
+		device.transform.localEulerAngles -= currentRotation;
+		*/
+		device.transform.localPosition = Vector3.zero;
+		
+		Camera[] cameras = device.GetComponentsInChildren<Camera>(true);
+        for (int i = 0; i < cameras.Length; ++i)
+		{
+			Camera cam = cameras[i];
+			if (cam.name.StartsWith("Dummy"))
+			{
+				cam.orthographicSize = cameraDummySizeOffsets[offset_index];
+				cam.nearClipPlane = cameraDummyNearOffsets[offset_index];
+				cam.farClipPlane = cameraDummyFarOffsets[offset_index];
+			}
+			else
+			{
+				cam.orthographicSize = cameraSizeOffsets[offset_index];
+				cam.nearClipPlane = cameraNearOffsets[offset_index];
+				cam.farClipPlane = cameraFarOffsets[offset_index];
+			}
+		}
+	}
+	
+   
     public static readonly Dictionary<int, HumanBodyBones> humanBodyBoneDic =
         new Dictionary<int, HumanBodyBones>()
         {
@@ -104,9 +185,11 @@ public class BhapticsVRCEditor : MonoBehaviour
 
 
 
-    void Awake()
+    void OnEnable()
     {
 #if UNITY_EDITOR
+        Reset();
+		
         if (GetComponents<BhapticsVRCEditor>().Length > 1)
         {
             Debug.LogError("BhapticsVRCEditor / Only one component can be added");
@@ -144,16 +227,12 @@ public class BhapticsVRCEditor : MonoBehaviour
             var path = AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets(deviceOnIconFileNames[i], null)[0]);
             deviceOnIcons[i] = AssetDatabase.LoadAssetAtPath<Texture>(path);
         }
+		
+		SetupOffsets();
 #endif
     }
 
     private void Reset()
-    {
-        Awake();
-        InitSetupDeviceGameObjects();
-    }
-
-    void OnEnable()
     {
 #if UNITY_EDITOR
         InitSetupDeviceGameObjects();
@@ -171,6 +250,9 @@ public class BhapticsVRCEditor : MonoBehaviour
     void OnDrawGizmos()
     {
 #if UNITY_EDITOR
+		if (!enabled)
+			return;
+
         if (anim == null)
         {
             return;
@@ -237,24 +319,7 @@ public class BhapticsVRCEditor : MonoBehaviour
 #endif
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-    public void AddDevicePrefab(string deviceTypeStr, BhapticsPrefabMode prefabMode)
-    {
-        AddDevicePrefab(deviceTypeStr, prefabMode, false, Vector3.zero, Quaternion.identity, Vector3.one);
-    }
-
-    public void AddDevicePrefab(string deviceTypeStr, BhapticsPrefabMode prefabMode, bool activeOffset, Vector3 posOffset, Quaternion rotOffset, Vector3 scaleOffset)
+    public void AddDevicePrefab(string deviceTypeStr)
     {
 #if UNITY_EDITOR
         if (!AvatarCheck())
@@ -264,18 +329,17 @@ public class BhapticsVRCEditor : MonoBehaviour
 
         DestroyDevicePrefab(deviceTypeStr);
 
-        string prefabName = GetDevicePrefabName(deviceTypeStr, prefabMode);
+        string prefabName = GetDevicePrefabName(deviceTypeStr);
         string path = FindAssetPath(prefabName);
         if (path == null)
         {
-            Debug.LogErrorFormat("BhapticsVRCEditor / Cannot find asset {0}, {1}", deviceTypeStr, prefabMode);
+            Debug.LogErrorFormat("BhapticsVRCEditor / Cannot find asset {0}", deviceTypeStr);
             return;
         }
         var ins = Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(path), transform);
         ins.name = prefabName;
         Undo.RegisterCreatedObjectUndo(ins, "Create New GameObject");
         Undo.RecordObjects(ins.GetComponentsInChildren<Transform>(), "Change Transform Position");
-
             var deviceTypeNames = Enum.GetNames(typeof(BhapticsDeviceType));
             for (int i = 0; i < deviceTypeNames.Length; ++i)
             {
@@ -283,15 +347,12 @@ public class BhapticsVRCEditor : MonoBehaviour
                 {
                     continue;
                 }
+				SetObjectScaleFromPrefab(ins, i);
+				deviceGameObjects[i] = ins;
                 if (deviceTypeNames[i] == "LeftHand" || deviceTypeNames[i] == "RightHand")
                 {
-                    ins.transform.parent = anim.GetBoneTransform(humanBodyBoneDic[i]);
-                    if (activeOffset)
-                    {
-                        ins.transform.localPosition = posOffset;
-                        ins.transform.localRotation = rotOffset;
-                        ins.transform.localScale = scaleOffset;
-                    }
+					ins.transform.SetParent(anim.GetBoneTransform(handBoneDic[i * 10]));
+					SetObjectOffetsFromPrefab(ins, i);
                     var joints = ins.GetComponentsInChildren<ParentConstraint>();
                     for (int jointIndex = 0; jointIndex < joints.Length; ++jointIndex)
                     {
@@ -308,19 +369,12 @@ public class BhapticsVRCEditor : MonoBehaviour
                                 + "\n" + "<color=red>" + handBoneDic[jointIndex + i * 10] + " is null.</color>");
                         }
                     }
-                    deviceGameObjects[i] = ins;
                 }
-                else
-                {
-                    ins.transform.parent = anim.GetBoneTransform(humanBodyBoneDic[i]);
-                    if (activeOffset)
-                    {
-                        ins.transform.localPosition = posOffset;
-                        ins.transform.localRotation = rotOffset;
-                        ins.transform.localScale = scaleOffset;
-                    }
-                    deviceGameObjects[i] = ins;
-                }
+				else
+				{
+					ins.transform.SetParent(anim.GetBoneTransform(humanBodyBoneDic[i]));
+					SetObjectOffetsFromPrefab(ins, i);
+				}
                 break;
             }
 #endif
@@ -330,51 +384,10 @@ public class BhapticsVRCEditor : MonoBehaviour
     {
 #if UNITY_EDITOR
         if (!AvatarCheck())
-        {
             return;
-        }
-        Transform target = null;
-        switch (prefabName)
-        {
-            case "Vest":
-                if (target == null) target = FindDeviceObject("BhapticsVRC_Vest_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_Vest_Hidden");
-                break;                                                    
-            case "LeftArm":                                               
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftArm_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftArm_Hidden");
-                break;                                                    
-            case "RightArm":                                              
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightArm_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightArm_Hidden");
-                break;                                                    
-            case "Head":                                                  
-                if (target == null) target = FindDeviceObject("BhapticsVRC_Head_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_Head_Hidden");
-                break;                                                    
-            case "LeftHand":                                              
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftHand_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftHand_Hidden");
-                break;                                                    
-            case "RightHand":                                             
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightHand_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightHand_Hidden");
-                break;                                                    
-            case "LeftFoot":                                              
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftFoot_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_LeftFoot_Hidden");
-                break;                                                    
-            case "RightFoot":                                             
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightFoot_Visualized");
-                if (target == null) target = FindDeviceObject("BhapticsVRC_RightFoot_Hidden");
-                break;
-        }
+        Transform target = FindDeviceObject(GetDevicePrefabName(prefabName));
         if (target != null)
-        {
-            Undo.DestroyObjectImmediate(target.gameObject);
-        }
-
-        return;
+            Undo.DestroyObjectImmediate(target.gameObject); 
 #endif
     }
 
@@ -459,7 +472,7 @@ public class BhapticsVRCEditor : MonoBehaviour
         return true;
     }
 
-    private string FindAssetPath(string assetName)
+    private static string FindAssetPath(string assetName)
     {
 #if UNITY_EDITOR
         return AssetDatabase.GUIDToAssetPath(AssetDatabase.FindAssets(assetName, null)[0]);
@@ -497,43 +510,45 @@ public class BhapticsVRCEditor : MonoBehaviour
         var deviceTypeNames = Enum.GetNames(typeof(BhapticsDeviceType));
         for (int i = 0; i < deviceTypeNames.Length; ++i)
         {
-            for (int j = 0; j < Enum.GetNames(typeof(BhapticsPrefabMode)).Length; ++j)
-            {
-                var devicePrefabName = GetDevicePrefabName(deviceTypeNames[i], (BhapticsPrefabMode)j);
-                var device = FindDeviceObject(devicePrefabName);
-                if (device != null)
-                {
-                    deviceGameObjects[i] = device.gameObject;
-                    ++deviceCount;
-                }
-            }
+			var devicePrefabName = GetDevicePrefabName(deviceTypeNames[i]);
+			var device = FindDeviceObject(devicePrefabName);
+			if (device != null)
+			{
+				deviceGameObjects[i] = device.gameObject;
+				++deviceCount;
+			}
         }
 
 
         Debug.Log("BhapticsVRCEditor / Init Setup: <color=green>" + deviceCount + " device</color> detected.");
     }
 
-    private string GetDevicePrefabName(string deviceType, BhapticsPrefabMode prefabMode)
+    private static string GetDevicePrefabName(string deviceType)
     {
         switch (deviceType)
         {
             case "Vest":
-                return "BhapticsVRC_Vest_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_Vest";
             case "LeftArm":
-                return "BhapticsVRC_LeftArm_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_LeftArm";
             case "RightArm":
-                return "BhapticsVRC_RightArm_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_RightArm";
             case "Head":
-                return "BhapticsVRC_Head_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_Head";
             case "LeftHand":
-                return "BhapticsVRC_LeftHand_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_LeftHand";
             case "RightHand":
-                return "BhapticsVRC_RightHand_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_RightHand";
             case "LeftFoot":
-                return "BhapticsVRC_LeftFoot_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_LeftFoot";
             case "RightFoot":
-                return "BhapticsVRC_RightFoot_" + Enum.GetName(typeof(BhapticsPrefabMode), prefabMode);
+                return "BhapticsVRC_RightFoot";
         }
         return null;
     }
 }
+
+[ExecuteInEditMode]
+[RequireComponent(typeof(VRC.SDKBase.VRC_AvatarDescriptor))]
+[AddComponentMenu("BhapticsVRCEditor")]
+public class BhapticsVRCEditor : VRCBhapticsIntegrationEditor {};

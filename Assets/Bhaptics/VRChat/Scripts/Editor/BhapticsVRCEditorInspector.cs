@@ -14,14 +14,28 @@ public class BhapticsVRCEditorInspector : Editor
         }
     }
 
-    
-
-
-
-
+	public void FixCameraScaling(Camera cam)
+	{
+		if (cam.name.StartsWith("Dummy"))
+		{
+			cam.orthographicSize = ((script.selectedDevice.lossyScale.y > script.selectedDevice.lossyScale.x) ? script.selectedDevice.lossyScale.y : script.selectedDevice.lossyScale.x) 
+			* BhapticsVRCEditor.cameraDummySizeOffsets[(int)script.selectedDeviceType];
+			cam.nearClipPlane = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraDummyNearOffsets[(int)script.selectedDeviceType];
+			cam.farClipPlane = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraDummyFarOffsets[(int)script.selectedDeviceType];
+		}
+		else
+		{
+			cam.orthographicSize = ((script.selectedDevice.lossyScale.y > script.selectedDevice.lossyScale.x) ? script.selectedDevice.lossyScale.y : script.selectedDevice.lossyScale.x) * BhapticsVRCEditor.cameraSizeOffsets[(int)script.selectedDeviceType];
+			cam.nearClipPlane = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraNearOffsets[(int)script.selectedDeviceType];
+			cam.farClipPlane = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraFarOffsets[(int)script.selectedDeviceType];
+		}
+	}
 
     public override void OnInspectorGUI()
     {
+		if (script == null)
+            return;
+	
         if (script.anim == null)
         {
             EditorGUILayout.HelpBox("BhapticsVRCEditor / Required Animator component & avatar.", MessageType.Error);
@@ -64,7 +78,7 @@ public class BhapticsVRCEditorInspector : Editor
                     if (GUILayout.Button(new GUIContent(script.deviceIcons[i], "CLICK: Add object"), deviceIconStyle, GUILayout.Width(50), GUILayout.Height(50)))
                     {
                         script.selectedDeviceType = (BhapticsDeviceType)deviceTypeIndex;
-                        script.AddDevicePrefab(script.selectedDeviceType.ToString(), BhapticsPrefabMode.Visualized);
+                        script.AddDevicePrefab(script.selectedDeviceType.ToString());
                         Debug.Log("BhapticsVRCEditor / <color=green>Add </color>" + script.selectedDeviceType.ToString() + " Object");
                     }
                 }
@@ -107,12 +121,17 @@ public class BhapticsVRCEditorInspector : Editor
         }
     }
 
+	private Transform previousGameObject;
+	private bool IsVisualized;
     void OnSceneGUI()
     {
         if (script == null)
         {
             return;
         }
+		
+		if (!script.enabled)
+			return;
 
         if (script.anim == null)
         {
@@ -147,13 +166,6 @@ public class BhapticsVRCEditorInspector : Editor
 
         GUILayout.BeginVertical();
         script.selectedDeviceType = (BhapticsDeviceType)EditorGUILayout.EnumPopup(string.Empty, script.selectedDeviceType, GUILayout.ExpandWidth(true), GUILayout.MinWidth(10));
-        if ((int)script.selectedDeviceType >= 4)
-        {
-            GUIStyle betaStyle = new GUIStyle(GUI.skin.label);
-            betaStyle.richText = true;
-            betaStyle.padding.top = -3;
-            GUILayout.Label("<size=9>*" + script.selectedDeviceType + " is beta version.</size>", betaStyle);
-        }
         GUILayout.EndVertical();
 
         script.selectedDevice = script.deviceGameObjects[(int)script.selectedDeviceType] == null ? null : script.deviceGameObjects[(int)script.selectedDeviceType].transform;
@@ -176,7 +188,7 @@ public class BhapticsVRCEditorInspector : Editor
             addButtonStyle.richText = true;
             if (GUILayout.Button("<color=green>Add</color> " + script.selectedDeviceType + " Object", addButtonStyle, GUILayout.Height(30)))
             {
-                script.AddDevicePrefab(script.selectedDeviceType.ToString(), BhapticsPrefabMode.Visualized);
+                script.AddDevicePrefab(script.selectedDeviceType.ToString());
                 Debug.Log("BhapticsVRCEditor / <color=green>Add </color>" + script.selectedDeviceType.ToString() + " Object");
                 return;
             }
@@ -185,19 +197,29 @@ public class BhapticsVRCEditorInspector : Editor
         {
             GUILayout.Space(2);
 
-            bool isVisualized = script.selectedDevice.name.Contains("_Visualized");
+			if (previousGameObject != script.selectedDevice)
+			{
+				previousGameObject = script.selectedDevice;
+				MeshRenderer[] render = script.selectedDevice.GetComponentsInChildren<MeshRenderer>();
+				IsVisualized = render[0].enabled;
+			}
+			
             GUILayout.BeginHorizontal();
             GUILayout.Label("Visible Mode", GUILayout.Width(80));
-
             GUIStyle visualButtonStyle = new GUIStyle(GUI.skin.button);
             visualButtonStyle.margin.top = 1;
-            if (GUILayout.Button(isVisualized ? "Visualized" : "Hidden", visualButtonStyle, GUILayout.Width(100), GUILayout.Height(18)))
+            if (GUILayout.Button(IsVisualized ? "Visualized" : "Hidden", visualButtonStyle, GUILayout.Width(100), GUILayout.Height(18)))
             {
-                script.AddDevicePrefab(script.selectedDeviceType.ToString(), isVisualized ? BhapticsPrefabMode.Hidden : BhapticsPrefabMode.Visualized,
-                                       true, script.selectedDevice.localPosition, script.selectedDevice.localRotation, script.selectedDevice.localScale);
+				IsVisualized = !IsVisualized;
+				MeshRenderer[] render = script.selectedDevice.GetComponentsInChildren<MeshRenderer>();
+				foreach (MeshRenderer renderer in render)
+					renderer.enabled = IsVisualized;
+				SkinnedMeshRenderer[] render2 = script.selectedDevice.GetComponentsInChildren<SkinnedMeshRenderer>();
+				foreach (SkinnedMeshRenderer renderer in render2)
+					renderer.enabled = IsVisualized;
                 string visual = "<color=green>Visualized</color>";
                 string hide = "<color=red>Hidden</color>";
-                Debug.Log("BhapticsVRCEditor / Change Visible Mode " + (isVisualized ? visual : hide) + " -> " + (isVisualized ? hide : visual));
+                Debug.Log("BhapticsVRCEditor / Change Visible Mode " + (IsVisualized ? visual : hide) + " -> " + (IsVisualized ? hide : visual));
                 return;
             }
             GUILayout.EndHorizontal();
@@ -288,20 +310,7 @@ public class BhapticsVRCEditorInspector : Editor
             script.selectedDevice.localScale = EditorGUILayout.Vector3Field("", script.RoundVector3(script.selectedDevice.localScale), GUILayout.Width(200));
             var cameras = script.selectedDevice.GetComponentsInChildren<Camera>(true);
             for (int i = 0; i < cameras.Length; ++i)
-            {
-				cameras[i].orthographicSize = ((script.selectedDevice.lossyScale.y > script.selectedDevice.lossyScale.x) ? script.selectedDevice.lossyScale.y : script.selectedDevice.lossyScale.x) * BhapticsVRCEditor.cameraSizeOffest[(int)script.selectedDeviceType];
-				if (cameras[i].name.StartsWith("Dummy"))
-				{
-					float scaleval = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraFarOffest[(int)script.selectedDeviceType];;
-					cameras[i].nearClipPlane = scaleval;
-					cameras[i].farClipPlane = scaleval * 2f;
-				}
-				else
-				{
-					cameras[i].nearClipPlane = 0f;
-					cameras[i].farClipPlane = script.selectedDevice.lossyScale.z * BhapticsVRCEditor.cameraFarOffest[(int)script.selectedDeviceType];
-				}
-            }
+				FixCameraScaling(cameras[i]);
             GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
@@ -310,7 +319,7 @@ public class BhapticsVRCEditorInspector : Editor
             deleteButtonStyle.richText = true;
             if (GUILayout.Button("<color=red>Delete</color> " + script.selectedDeviceType + " Object [Del]", deleteButtonStyle, GUILayout.Height(30)))
             {
-                script.DestroyDevicePrefab(script.selectedDeviceType.ToString());
+				Undo.DestroyObjectImmediate(script.selectedDevice.gameObject);
                 Debug.Log("BhapticsVRCEditor / <color=red>Delete </color>" + script.selectedDeviceType.ToString() + " Object");
                 return;
             }
@@ -365,10 +374,7 @@ public class BhapticsVRCEditorInspector : Editor
                                                                            HandleUtility.GetHandleSize(script.selectedDevice.position));
                     var cameras = script.selectedDevice.GetComponentsInChildren<Camera>(true);
                     for (int i = 0; i < cameras.Length; ++i)
-                    {
-                        cameras[i].orthographicSize = script.selectedDevice.lossyScale.x * BhapticsVRCEditor.cameraSizeOffest[(int)script.selectedDeviceType];
-                        cameras[i].farClipPlane = script.selectedDevice.lossyScale.x * BhapticsVRCEditor.cameraFarOffest[(int)script.selectedDeviceType];
-                    }
+						FixCameraScaling(cameras[i]);
                 }
             }
             catch (Exception e)
@@ -382,10 +388,7 @@ public class BhapticsVRCEditorInspector : Editor
                 script.symmetryDevice.localScale = script.selectedDevice.localScale;
                 var symmetryCameras = script.symmetryDevice.GetComponentsInChildren<Camera>(true);
                 for (int i = 0; i < symmetryCameras.Length; ++i)
-                {
-                    symmetryCameras[i].orthographicSize = script.symmetryDevice.lossyScale.x * BhapticsVRCEditor.cameraSizeOffest[(int)script.selectedDeviceType];
-                    symmetryCameras[i].farClipPlane = script.selectedDevice.lossyScale.x * BhapticsVRCEditor.cameraFarOffest[(int)script.selectedDeviceType];
-                }
+					FixCameraScaling(symmetryCameras[i]);
                 Undo.RecordObjects(new Transform[] { script.selectedDevice, script.symmetryDevice }, "Change TargetObject and SymmetryTargetObject");
             }
             else

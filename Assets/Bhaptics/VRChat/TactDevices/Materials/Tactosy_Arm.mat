@@ -9,7 +9,7 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Tactosy_Arm
   m_Shader: {fileID: 4800000, guid: c2939260669fd5c42ad7b1659c2f4315, type: 3}
-  m_ShaderKeywords: _Ocu_ON
+  m_ShaderKeywords: 
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
