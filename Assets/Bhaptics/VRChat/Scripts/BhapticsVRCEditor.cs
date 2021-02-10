@@ -50,6 +50,7 @@ public class VRCBhapticsIntegrationEditor : MonoBehaviour
 	}
 	public static void GetOffsetsFromPrefab(string deviceTypeStr, int offset_index)
 	{
+#if UNITY_EDITOR
 		string prefabName = GetDevicePrefabName(deviceTypeStr);
         string path = FindAssetPath(prefabName);
         if (path == null)
@@ -78,6 +79,7 @@ public class VRCBhapticsIntegrationEditor : MonoBehaviour
 				cameraFarOffsets[offset_index] =  cam.farClipPlane;
 			}
 		}
+#endif
 	}
 	
 	public static void SetObjectScaleFromPrefab(GameObject device, int offset_index) => 
